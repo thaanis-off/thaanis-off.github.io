@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Receipt Generator</title>
+    <style>
+        /* --- General Page Styling --- */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding: 40px;
+            gap: 40px;
+        }
+
+        /* --- Layout: Form vs Preview --- */
+        .container {
+            display: flex;
+            gap: 40px;
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        /* --- The Input Form Card --- */
+        .form-panel {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+            height: fit-content;
+        }
+
+        .form-panel h2 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+            font-size: 0.9rem;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1rem;
+            box-sizing: border-box; /* Fixes padding width issues */
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+
+        .btn-print {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            width: 100%;
+            padding: 15px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background 0.2s;
+        }
+
+        .btn-print:hover {
+            background-color: #0056b3;
+        }
+
+        /* --- The Receipt Styling (Visuals) --- */
+        .receipt-preview-container {
+            /* Mimic the paper look */
+            background-color: #fff;
+            width: 320px; /* Standard thermal width */
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            font-family: 'Courier New', Courier, monospace; /* Thermal font look */
+            color: #000;
+            font-size: 14px;
+            line-height: 1.4;
+            position: relative;
+        }
+
+        .receipt-header {
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .receipt-title {
+            font-size: 24px;
+            font-weight: 900;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        .divider {
+            border-bottom: 1px solid #000;
+            margin: 10px 0;
+        }
+
+        .divider.thin {
+            border-bottom: 1px solid #aaa;
+        }
+
+        .shop-details {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .shop-details div {
+            margin-bottom: 2px;
+        }
+
+        .transaction-details {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        /* Grid for Receipt Data items (Label .... Value) */
+        .receipt-grid {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 5px 10px;
+            margin-bottom: 15px;
+        }
+
+        .receipt-label {
+            font-weight: normal;
+            text-align: left;
+        }
+
+        .receipt-value {
+            text-align: right;
+            font-weight: bold;
+            word-break: break-all;
+        }
+
+        .amount-row {
+            margin-top: 10px;
+            font-size: 16px;
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 12px;
+        }
+
+        /* --- PRINT MEDIA QUERY (Crucial for PDF generation) --- */
+        @media print {
+            body {
+                background: white;
+                margin: 0;
+                padding: 0;
+                display: block; /* Reset flex */
+            }
+
+            .form-panel, .btn-print, h1, .no-print {
+                display: none !important; /* Hide the form */
+            }
+
+            .container {
+                display: block;
+                width: 100%;
+                margin: 0;
+            }
+
+            .receipt-preview-container {
+                box-shadow: none; /* Remove shadow for print */
+                margin: 0 auto; /* Center it */
+                width: 100%;
+                max-width: 350px; /* Constrain width for realistic thermal print */
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <div class="form-panel">
+            <h2>Receipt Details</h2>
+            
+            <div class="form-group">
+                <label>Store Name</label>
+                <input type="text" id="in-store" value="HMobiles & Communication" oninput="updateReceipt()">
+            </div>
+            <div class="form-group">
+                <label>Address</label>
+                <input type="text" id="in-address" value="294A APC Road Nintavur 07" oninput="updateReceipt()">
+            </div>
+            <div class="form-group">
+                <label>Store Phone</label>
+                <input type="text" id="in-phone" value="760032623" oninput="updateReceipt()">
+            </div>
+            <div class="form-group">
+                <label>Sale ID</label>
+                <input type="text" id="in-sale" value="5449191" oninput="updateReceipt()">
+            </div>
+            <hr>
+            <div class="form-group">
+                <label>Operator</label>
+                <input type="text" id="in-operator" value="Ceylon Electricity Board" oninput="updateReceipt()">
+            </div>
+            <div class="form-group">
+                <label>Account/Mobile Number</label>
+                <input type="text" id="in-number" value="6993003511" oninput="updateReceipt()">
+            </div>
+            <div class="form-group">
+                <label>Ref Number</label>
+                <input type="text" id="in-ref" value="2026010719511224 5258" oninput="updateReceipt()">
+            </div>
+            <div class="form-group">
+                <label>Amount (LKR)</label>
+                <input type="number" id="in-amount" value="500.00" step="0.01" oninput="updateReceipt()">
+            </div>
+
+            <button class="btn-print" onclick="window.print()">Print / Download Receipt</button>
+        </div>
+
+        <div class="receipt-preview-container" id="receipt">
+            <div class="receipt-header">
+                <div class="receipt-title">RECEIPT</div>
+            </div>
+            <div class="divider"></div>
+
+            <div class="shop-details">
+                <div id="out-store">HMobiles & Communication</div>
+                <div id="out-address">294A APC Road Nintavur 07</div>
+                <div id="out-phone">760032623</div>
+            </div>
+
+            <div class="transaction-details">
+                <div>Sale #<span id="out-sale">5449191</span></div>
+                <div id="out-date">2026-01-07 19:51:14</div>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="receipt-grid">
+                <div class="receipt-label">Operator</div>
+                <div class="receipt-value" id="out-operator">Ceylon Electricity Board</div>
+
+                <div class="receipt-label">Number</div>
+                <div class="receipt-value" id="out-number">6993003511</div>
+
+                <div class="receipt-label">Ref Number</div>
+                <div class="receipt-value" id="out-ref">2026010719511224 5258</div>
+            </div>
+
+            <div class="amount-row">
+                <span>Amount</span>
+                <span id="out-amount">500.00</span>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="footer">
+                Thank you come again. Powered by<br>
+                www.Quickpay.lk
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // 1. Function to update the receipt live as user types
+        function updateReceipt() {
+            document.getElementById('out-store').innerText = document.getElementById('in-store').value;
+            document.getElementById('out-address').innerText = document.getElementById('in-address').value;
+            document.getElementById('out-phone').innerText = document.getElementById('in-phone').value;
+            document.getElementById('out-sale').innerText = document.getElementById('in-sale').value;
+            
+            document.getElementById('out-operator').innerText = document.getElementById('in-operator').value;
+            document.getElementById('out-number').innerText = document.getElementById('in-number').value;
+            document.getElementById('out-ref').innerText = document.getElementById('in-ref').value;
+            
+            // Format amount to ensure 2 decimal places
+            const amt = parseFloat(document.getElementById('in-amount').value);
+            document.getElementById('out-amount').innerText = isNaN(amt) ? "0.00" : amt.toFixed(2);
+        }
+
+        // 2. Function to set current Date Time on load
+        function setCurrentTime() {
+            const now = new Date();
+            
+            // Format: YYYY-MM-DD HH:MM:SS
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+
+            const formattedDate = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+            
+            document.getElementById('out-date').innerText = formattedDate;
+        }
+
+        // Run date function on load
+        window.onload = setCurrentTime;
+    </script>
+</body>
+</html>
